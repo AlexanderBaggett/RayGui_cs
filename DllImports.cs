@@ -1,4 +1,10 @@
-﻿namespace RayGui_cs
+﻿using System;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Raylib_cs;
+using Font = Raylib_cs.Font;
+
+namespace RayGui_cs
 {
     [SuppressUnmanagedCodeSecurity]
     public static unsafe partial class RayGui
@@ -79,6 +85,12 @@
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void GuiLoadStyle(sbyte* fileName);
 
+        public static void GuiLoadStyle(string fileName)
+        {
+            using var str1 = fileName.ToUtf8Buffer();
+            GuiLoadStyle(str1.AsPointer());
+        }
+
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void GuiLoadStyleDefault();
 
@@ -90,66 +102,192 @@
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void GuiSetTooltip(sbyte* tooltip);
+        public static void GuiSetTooltip(string tooltip)
+        {
+            using var str1 = tooltip.ToUtf8Buffer();
+            GuiSetTooltip(str1.AsPointer());
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern sbyte* GuiIconText(int iconId, sbyte* text);
+        public static string GuiIconText(int iconId, string text)
+        {
+            using var str1 = text.ToUtf8Buffer();
+           var result = GuiIconText(iconId,str1.AsPointer());
+
+            return Utf8StringUtils.GetUTF8String(result);
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void GuiSetIconScale(int scale);
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int * GuiGetIcons();
+        public static extern uint * GuiGetIcons();
+
+        public static uint[] GuiGetIcons(int iconCount)
+        {
+           List<uint> result = new List<uint>();
+            var icons = GuiGetIcons();
+            for (int i = 0; i < iconCount; i++)
+            {
+                uint icon = icons[i];
+                result.Add(icon);
+            }
+            return result.ToArray();
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
-        public static extern int * GuiLoadIcons(sbyte* fileName, [MarshalAs(UnmanagedType.I1)] CBool loadIconsName);
+        //public static extern char** GuiLoadIcons(sbyte* fileName, [MarshalAs(UnmanagedType.I1)] CBool loadIconsName);
+        public static extern sbyte** GuiLoadIcons(sbyte* fileName, [MarshalAs(UnmanagedType.I1)] CBool loadIconsName);
+        public static string[] GuiLoadIcons(string fileName, bool loadIconsName, int numberOfIcons)
+        {
+            using var str1 = fileName.ToUtf8Buffer();
+
+            var result = GuiLoadIcons(str1.AsPointer(), loadIconsName);
+
+            List<string> list = new List<string>();
+            for (int i = 0; i < numberOfIcons; i++)
+            {
+                sbyte* current_string = result[i];
+                list.Add(Utf8StringUtils.GetUTF8String(current_string));
+            }
+            return list.ToArray();
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern void GuiDrawIcon(int iconId, int posX, int posY, int pixelSize, Color color);
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiWindowBox(Rectangle bounds, sbyte* title);
+        public static int GuiWindowBox(Rectangle bounds, string title)
+        {
+            using var str = title.ToUtf8Buffer();
+            return GuiWindowBox(bounds, str.AsPointer());
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiGroupBox(Rectangle bounds, sbyte* text);
+        public static int GuiGroupBox(Rectangle bounds, string text)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiGroupBox(bounds, str.AsPointer());
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiLine(Rectangle bounds, sbyte* text);
+        public static int GuiLine(Rectangle bounds, string text)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiLine(bounds, str.AsPointer());
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiPanel(Rectangle bounds, sbyte* text);
+        public static int GuiPanel(Rectangle bounds, string text)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiPanel(bounds, str.AsPointer());
+        }
+
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiTabBar(Rectangle bounds, sbyte*[] text, int count, int * active);
 
+        public static int GuiTabBar(Rectangle bounds, string[] text, int count, ref int active)
+        {
+            sbyte*[] sbyteArray = new sbyte*[text.Length];
+            for(int i = 0; i < count; i++)
+            {
+                sbyteArray[i] = text[i].ToUtf8Buffer().AsPointer();
+            }
+            int* activePtr = (int*)Unsafe.AsPointer(ref active);
+
+            return GuiTabBar(bounds, sbyteArray,count,activePtr);
+        }
+
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiScrollPanel(Rectangle bounds, sbyte* text, Rectangle content, Vector2 * scroll, Rectangle * view);
+        public static int GuiScrollPanel(Rectangle bounds, string text, Rectangle content, ref Vector2 scroll, ref Rectangle view)
+        {
+            using var str = text.ToUtf8Buffer();
+            var scrollPointer =(Vector2 *) Unsafe.AsPointer(ref scroll);
+            var viewPointer = (Rectangle *) Unsafe.AsPointer(ref view);
+
+            return  GuiScrollPanel(bounds, str.AsPointer(), content, scrollPointer, viewPointer);
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiLabel(Rectangle bounds, sbyte* text);
-
+        public static int GuiLabel(Rectangle bounds, string text)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiLabel(bounds, str.AsPointer());
+        }
+    
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiButton(Rectangle bounds, sbyte* text);
+        public static int GuiButton(Rectangle bounds, string text) 
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiButton(bounds, str.AsPointer());
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiLabelButton(Rectangle bounds, sbyte* text);
+        public static int GuiLabelButton(Rectangle bounds, string text)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiLabelButton(bounds, str.AsPointer());
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiToggle(Rectangle bounds, sbyte* text, CBool * active);
+        public static int GuiToggle(Rectangle bounds, string text, ref CBool active)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiToggle(bounds, str.AsPointer(), (CBool*) Unsafe.AsPointer(ref active));
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiToggleGroup(Rectangle bounds, sbyte* text, int * active);
+        public static int GuiToggleGroup(Rectangle bounds, string text, ref int active)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiToggleGroup(bounds, str.AsPointer(), (int*)Unsafe.AsPointer(ref active));
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiToggleSlider(Rectangle bounds, sbyte* text, int * active);
+        public static int GuiToggleSlider(Rectangle bounds, string text, ref int active)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiToggleSlider(bounds, str.AsPointer(), (int*)Unsafe.AsPointer(ref active));
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiCheckBox(Rectangle bounds, sbyte* text, [MarshalAs(UnmanagedType.I1, MarshalCookie = "checked")] CBool* @checked);
 
+        public static int GuiCheckBox(Rectangle bounds, string text, ref CBool @checked)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiCheckBox(bounds, str.AsPointer(), (CBool*)Unsafe.AsPointer(ref @checked));
+        }
+
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiComboBox(Rectangle bounds, sbyte* text, int * active);
+        public static int GuiComboBox(Rectangle bounds, string text, ref int active)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiComboBox(bounds, str.AsPointer(), (int*) Unsafe.AsPointer(ref active));
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiDropdownBox(Rectangle bounds, sbyte* text, int * active, CBool editMode);
+        public static int GuiDropdownBox(Rectangle bounds, string text, ref int active, bool editMode)
+        {
+            using var str = text.ToUtf8Buffer();
+            return GuiDropdownBox(bounds, str.AsPointer(), (int*)Unsafe.AsPointer(ref active), editMode);
+        }
 
         [DllImport(NativeLibName, CallingConvention = CallingConvention.Cdecl)]
         public static extern int GuiSpinner(Rectangle bounds, sbyte* text, int * value, int minValue, int maxValue, CBool editMode);
